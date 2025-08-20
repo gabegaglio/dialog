@@ -8,13 +8,26 @@ export function useChat() {
   const [messages, setMessages] = useState<Msg[]>([])
 
   async function send(text: string) {
-    const prev = [...messages, { role: 'user', content: text }]
+    const userMessage: Msg = { role: 'user', content: text }
+    const prev = [...messages, userMessage]
     setMessages(prev)
+    
     try {
-      const { data } = await axios.post(`${API}/chat`, { message: text })
-      setMessages([...prev, { role: 'assistant', content: data.answer }])
+      const { data } = await axios.post(`${API}/chat`, { 
+        message: text,
+        user_id: "default_user"
+      })
+      
+      if (data.success) {
+        const assistantMessage: Msg = { role: 'assistant', content: data.response }
+        setMessages([...prev, assistantMessage])
+      } else {
+        const errorMessage: Msg = { role: 'assistant', content: 'Sorry, something went wrong.' }
+        setMessages([...prev, errorMessage])
+      }
     } catch (e: any) {
-      setMessages([...prev, { role: 'assistant', content: 'Sorry, something went wrong.' }])
+      const errorMessage: Msg = { role: 'assistant', content: 'Sorry, something went wrong.' }
+      setMessages([...prev, errorMessage])
     }
   }
 
