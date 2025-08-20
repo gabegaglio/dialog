@@ -30,7 +30,6 @@ coverage.xml
 .env.example
 
 # Medical data and sensitive files
-csvjson.json
 *.csv
 medical_data/
 health_records/
