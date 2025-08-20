@@ -234,7 +234,7 @@ export default function Chat() {
               </div>
               <button
                 onClick={stopStreaming}
-                className="px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors font-medium"
+                className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-md hover:bg-gray-200 transition-colors font-medium border border-gray-300"
                 title="Stop AI response"
               >
                 Stop
@@ -261,17 +261,11 @@ export default function Chat() {
                 </div>
               )}
 
-              {message.role === "user" && (
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-              )}
-
               <div
                 className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
                   message.role === "user"
-                    ? "bg-blue-500 text-black shadow-lg"
-                    : "bg-gray-100 text-black"
+                    ? "bg-blue-50 text-gray-900 shadow-sm border border-blue-200"
+                    : "bg-gray-100 text-gray-900"
                 }`}
               >
                 {message.isStreaming ? (
@@ -296,7 +290,7 @@ export default function Chat() {
                 )}
                 <p
                   className={`text-xs mt-2 ${
-                    message.role === "user" ? "text-black" : "text-black"
+                    message.role === "user" ? "text-gray-600" : "text-gray-500"
                   }`}
                 >
                   {message.timestamp.toLocaleTimeString([], {
@@ -321,7 +315,7 @@ export default function Chat() {
               </div>
               <button
                 onClick={stopStreaming}
-                className="px-2 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 transition-colors font-medium self-start"
+                className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md hover:bg-gray-200 transition-colors font-medium border border-gray-300 self-start"
                 title="Stop AI response"
               >
                 Stop
@@ -358,7 +352,7 @@ export default function Chat() {
             {(isLoading || streamingMessageId) && (
               <button
                 onClick={stopStreaming}
-                className="flex-shrink-0 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium border border-red-600"
+                className="flex-shrink-0 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium border border-gray-300"
                 title="Stop AI response"
               >
                 <svg
@@ -394,10 +388,13 @@ export default function Chat() {
             </div>
           </div>
           <div>
-            <h3 className="text-blue-800 font-medium text-sm">Important Note</h3>
+            <h3 className="text-blue-800 font-medium text-sm">
+              Important Note
+            </h3>
             <p className="text-blue-700 text-sm mt-1">
-              This AI provides educational insights about your glucose data. For medical decisions, 
-              medication changes, or treatment plans, always consult your healthcare provider.
+              This AI provides educational insights about your glucose data. For
+              medical decisions, medication changes, or treatment plans, always
+              consult your healthcare provider.
             </p>
           </div>
         </div>
