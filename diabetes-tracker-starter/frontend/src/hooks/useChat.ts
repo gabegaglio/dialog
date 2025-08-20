@@ -9,8 +9,8 @@ export function useChat() {
 
   async function send(text: string) {
     const userMessage: Msg = { role: 'user', content: text }
-    const prev = [...messages, userMessage]
-    setMessages(prev)
+    const updatedMessages: Msg[] = [...messages, userMessage]
+    setMessages(updatedMessages)
     
     try {
       const { data } = await axios.post(`${API}/chat`, { 
@@ -20,14 +20,14 @@ export function useChat() {
       
       if (data.success) {
         const assistantMessage: Msg = { role: 'assistant', content: data.response }
-        setMessages([...prev, assistantMessage])
+        setMessages([...updatedMessages, assistantMessage])
       } else {
         const errorMessage: Msg = { role: 'assistant', content: 'Sorry, something went wrong.' }
-        setMessages([...prev, errorMessage])
+        setMessages([...updatedMessages, errorMessage])
       }
     } catch (e: any) {
       const errorMessage: Msg = { role: 'assistant', content: 'Sorry, something went wrong.' }
-      setMessages([...prev, errorMessage])
+      setMessages([...updatedMessages, errorMessage])
     }
   }
 
