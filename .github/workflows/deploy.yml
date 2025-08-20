@@ -31,9 +31,14 @@ jobs:
         cd diabetes-tracker-starter/frontend
         npm run build
         
+    - name: Prepare for deployment
+      run: |
+        # Copy build files to root directory for GitHub Pages
+        cp -r diabetes-tracker-starter/frontend/dist/* ./
+        
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./diabetes-tracker-starter/frontend/dist
+        publish_dir: ./
