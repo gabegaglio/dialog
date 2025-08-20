@@ -1,5 +1,6 @@
 import openai
 import os
+import re
 from typing import Dict, Any, List
 from app.services.real_data_service import real_data_service
 from datetime import datetime, timedelta
@@ -8,6 +9,20 @@ class ChatService:
     def __init__(self):
         self.client = None
         self._initialized = False
+        
+        # Define dangerous medical advice patterns to filter out
+        self.dangerous_patterns = [
+            r'\b(?:take|give|inject|administer|use)\s+\d+\s*(?:units?|iu|iu\'s)\s+insulin\b',
+            r'\b(?:increase|decrease|adjust|change|modify)\s+(?:your\s+)?insulin\s+(?:dose|dosage|amount)\b',
+            r'\b(?:stop|start|discontinue|begin)\s+(?:taking|using)\s+(?:insulin|medication|medicine)\b',
+            r'\b(?:you\s+should|you\s+must|you\s+need\s+to)\s+(?:take|give|inject)\b',
+            r'\b(?:prescribe|prescription|dosage|dose)\s+(?:of\s+)?(?:insulin|medication)\b',
+            r'\b(?:medical\s+advice|treatment\s+plan|diagnosis|diagnose)\b',
+            r'\b(?:emergency|urgent|immediate|right\s+now)\s+(?:action|treatment|medication)\b'
+        ]
+        
+        # Compile regex patterns for efficiency
+        self.dangerous_regex = [re.compile(pattern, re.IGNORECASE) for pattern in self.dangerous_patterns]
     
     def _ensure_initialized(self):
         """Initialize the OpenAI client if not already done"""
@@ -19,6 +34,37 @@ class ChatService:
             
             self.client = openai.OpenAI(api_key=api_key)
             self._initialized = True
+    
+    def _check_for_dangerous_content(self, text: str) -> bool:
+        """Check if the text contains dangerous medical advice patterns"""
+        text_lower = text.lower()
+        
+        # Check for dangerous patterns
+        for pattern in self.dangerous_regex:
+            if pattern.search(text):
+                return True
+        
+        # Additional safety checks
+        dangerous_phrases = [
+            "take insulin", "give insulin", "inject insulin", "insulin dose",
+            "medical advice", "treatment plan", "diagnosis", "prescription",
+            "you should take", "you must take", "you need to take"
+        ]
+        
+        return any(phrase in text_lower for phrase in dangerous_phrases)
+    
+    def _add_safety_disclaimer(self, response: str) -> str:
+        """Add safety disclaimers to AI responses"""
+        safety_disclaimer = """
+
+⚠️ **IMPORTANT SAFETY REMINDER:**
+- This information is for educational purposes only
+- Never adjust medications or insulin doses without consulting your healthcare provider
+- Always seek professional medical advice for treatment decisions
+- In emergencies, call 911 or contact your doctor immediately
+- This AI cannot diagnose, treat, or prescribe medications"""
+        
+        return response + safety_disclaimer
     
     def _get_glucose_context(self, hours: int = 24) -> str:
         """Get recent glucose data context for the AI"""
@@ -88,24 +134,33 @@ Latest Readings:
                 # Get 24 hours of glucose data for context
                 glucose_context = self._get_glucose_context(hours=24)
             
-            # Create a comprehensive system prompt
+            # Create a comprehensive system prompt with STRONG safety measures
             system_prompt = """You are a helpful AI assistant specialized in diabetes management and glucose monitoring. 
             You have access to the user's actual glucose data and can provide personalized insights and recommendations.
             
-            IMPORTANT GUIDELINES:
-            - Always prioritize user safety and recommend consulting healthcare professionals for medical decisions
-            - Use the provided glucose data to give personalized, data-driven insights
-            - Be supportive, informative, and educational
-            - If glucose data shows concerning patterns (many lows, sustained highs), emphasize the importance of medical consultation
-            - Provide practical lifestyle and monitoring advice
-            - Never make definitive medical diagnoses or treatment recommendations
+            🚨 CRITICAL SAFETY RULES - NEVER VIOLATE THESE:
+            1. NEVER suggest specific insulin doses, amounts, or medication changes
+            2. NEVER give medical advice, treatment plans, or prescriptions
+            3. NEVER tell users to start, stop, or modify medications
+            4. NEVER make medical diagnoses or treatment recommendations
+            5. NEVER suggest emergency medical actions beyond calling 911
+            6. ALWAYS recommend consulting healthcare professionals for medical decisions
             
-            When analyzing glucose data:
-            - Look for patterns, trends, and potential issues
-            - Identify times of day with consistent highs or lows
-            - Suggest lifestyle adjustments that might help
-            - Recommend when to seek medical advice
-            """
+            ✅ WHAT YOU CAN DO:
+            - Analyze glucose patterns and trends from data
+            - Provide educational information about diabetes
+            - Suggest lifestyle modifications (diet, exercise, stress management)
+            - Help interpret glucose readings and ranges
+            - Recommend when to seek medical attention
+            - Provide general diabetes education and awareness
+            
+            ✅ SAFE RESPONSE STRUCTURE:
+            - Start with data analysis and observations
+            - Provide educational context and explanations
+            - Suggest lifestyle considerations (never medical)
+            - Always end with "consult your healthcare provider" for medical decisions
+            
+            Remember: You are an EDUCATIONAL TOOL, not a medical professional."""
             
             # Build the full context
             full_context = system_prompt
@@ -121,19 +176,36 @@ Latest Readings:
                     {"role": "user", "content": message}
                 ],
                 max_tokens=800,
-                temperature=0.7
+                temperature=0.3  # Lower temperature for more consistent, safer responses
             )
+            
+            ai_response = response.choices[0].message.content
+            
+            # Safety check: scan the AI response for dangerous content
+            if self._check_for_dangerous_content(ai_response):
+                # Replace dangerous response with safe alternative
+                ai_response = """I apologize, but I cannot provide specific medical advice or recommendations about medications or insulin dosing. 
+
+Instead, I can help you understand your glucose data patterns and provide general educational information about diabetes management.
+
+For any medical decisions, medication changes, or treatment plans, please consult your healthcare provider directly. They are the only ones qualified to give you personalized medical advice.
+
+What specific aspect of your glucose data would you like me to help you understand or analyze?"""
+            
+            # Always add safety disclaimer
+            ai_response = self._add_safety_disclaimer(ai_response)
             
             return {
                 "success": True,
-                "response": response.choices[0].message.content,
+                "response": ai_response,
                 "model": response.model,
                 "usage": {
                     "prompt_tokens": response.usage.prompt_tokens,
                     "completion_tokens": response.usage.completion_tokens,
                     "total_tokens": response.usage.total_tokens
                 },
-                "glucose_context_included": include_glucose
+                "glucose_context_included": include_glucose,
+                "safety_checked": True
             }
             
         except Exception as e:
@@ -141,7 +213,8 @@ Latest Readings:
                 "success": False,
                 "error": str(e),
                 "response": "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
-                "glucose_context_included": False
+                "glucose_context_included": False,
+                "safety_checked": False
             }
 
 chat_service = ChatService()

@@ -153,6 +153,24 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Safety Warning Banner */}
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0">
+            <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-amber-800 font-medium text-sm">Medical Disclaimer</h3>
+            <p className="text-amber-700 text-sm mt-1">
+              This dashboard is for informational purposes only. Never make medical decisions based solely on this data. 
+              Always consult your healthcare provider for medical advice, medication changes, or treatment plans.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Current Glucose Level - Light & Concise Design */}
       <div className="space-y-4">
         {/* Main glucose card */}
