@@ -221,27 +221,6 @@ export default function Chat() {
             </div>
           </div>
 
-          {/* CRITICAL SAFETY DISCLAIMER */}
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <AlertTriangle className="w-3 h-3 text-red-600" />
-              </div>
-              <div className="text-sm">
-                <p className="font-semibold text-red-800 mb-1">⚠️ IMPORTANT SAFETY WARNING</p>
-                <p className="text-red-700 mb-2">
-                  <strong>This AI is for informational purposes only and cannot provide medical advice.</strong>
-                </p>
-                <ul className="text-red-600 text-xs space-y-1">
-                  <li>• Never adjust insulin doses based on AI suggestions</li>
-                  <li>• Always consult your healthcare provider for medical decisions</li>
-                  <li>• This AI cannot diagnose, treat, or prescribe medications</li>
-                  <li>• In emergencies, call 911 or your doctor immediately</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
           {/* Streaming indicator */}
           {(isLoading || streamingMessageId) && (
             <div className="mt-3 flex items-center justify-between">
@@ -403,6 +382,24 @@ export default function Chat() {
           <p className="text-xs text-gray-500 mt-2 text-center">
             Press Enter to send, Shift+Enter for new line
           </p>
+        </div>
+      </div>
+
+      {/* Safety Warning - Moved below chat and made less prominent */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0">
+            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="w-3 h-3 text-blue-600" />
+            </div>
+          </div>
+          <div>
+            <h3 className="text-blue-800 font-medium text-sm">Important Note</h3>
+            <p className="text-blue-700 text-sm mt-1">
+              This AI provides educational insights about your glucose data. For medical decisions, 
+              medication changes, or treatment plans, always consult your healthcare provider.
+            </p>
+          </div>
         </div>
       </div>
 

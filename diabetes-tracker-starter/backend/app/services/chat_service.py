@@ -15,10 +15,9 @@ class ChatService:
             r'\b(?:take|give|inject|administer|use)\s+\d+\s*(?:units?|iu|iu\'s)\s+insulin\b',
             r'\b(?:increase|decrease|adjust|change|modify)\s+(?:your\s+)?insulin\s+(?:dose|dosage|amount)\b',
             r'\b(?:stop|start|discontinue|begin)\s+(?:taking|using)\s+(?:insulin|medication|medicine)\b',
-            r'\b(?:you\s+should|you\s+must|you\s+need\s+to)\s+(?:take|give|inject)\b',
-            r'\b(?:prescribe|prescription|dosage|dose)\s+(?:of\s+)?(?:insulin|medication)\b',
-            r'\b(?:medical\s+advice|treatment\s+plan|diagnosis|diagnose)\b',
-            r'\b(?:emergency|urgent|immediate|right\s+now)\s+(?:action|treatment|medication)\b'
+            r'\b(?:you\s+should|you\s+must|you\s+need\s+to)\s+(?:take|give|inject)\s+insulin\b',
+            r'\b(?:prescribe|prescription)\s+(?:of\s+)?(?:insulin|medication)\b',
+            r'\b(?:emergency|urgent|immediate|right\s+now)\s+(?:insulin|medication|treatment)\b'
         ]
         
         # Compile regex patterns for efficiency
@@ -47,8 +46,7 @@ class ChatService:
         # Additional safety checks
         dangerous_phrases = [
             "take insulin", "give insulin", "inject insulin", "insulin dose",
-            "medical advice", "treatment plan", "diagnosis", "prescription",
-            "you should take", "you must take", "you need to take"
+            "prescription", "you should take insulin", "you must take insulin", "you need to take insulin"
         ]
         
         return any(phrase in text_lower for phrase in dangerous_phrases)
@@ -134,33 +132,34 @@ Latest Readings:
                 # Get 24 hours of glucose data for context
                 glucose_context = self._get_glucose_context(hours=24)
             
-            # Create a comprehensive system prompt with STRONG safety measures
+            # Create a comprehensive system prompt with balanced safety measures
             system_prompt = """You are a helpful AI assistant specialized in diabetes management and glucose monitoring. 
             You have access to the user's actual glucose data and can provide personalized insights and recommendations.
             
-            🚨 CRITICAL SAFETY RULES - NEVER VIOLATE THESE:
+            🚨 IMPORTANT SAFETY RULES:
             1. NEVER suggest specific insulin doses, amounts, or medication changes
             2. NEVER give medical advice, treatment plans, or prescriptions
             3. NEVER tell users to start, stop, or modify medications
             4. NEVER make medical diagnoses or treatment recommendations
             5. NEVER suggest emergency medical actions beyond calling 911
-            6. ALWAYS recommend consulting healthcare professionals for medical decisions
             
             ✅ WHAT YOU CAN DO:
-            - Analyze glucose patterns and trends from data
+            - Analyze glucose patterns, trends, and insights from data
             - Provide educational information about diabetes
             - Suggest lifestyle modifications (diet, exercise, stress management)
             - Help interpret glucose readings and ranges
-            - Recommend when to seek medical attention
+            - Identify concerning patterns and recommend when to seek medical attention
             - Provide general diabetes education and awareness
+            - Give detailed trend analysis and data interpretation
             
-            ✅ SAFE RESPONSE STRUCTURE:
-            - Start with data analysis and observations
-            - Provide educational context and explanations
+            ✅ RESPONSE APPROACH:
+            - Be helpful, informative, and educational
+            - Provide detailed analysis of glucose patterns and trends
             - Suggest lifestyle considerations (never medical)
-            - Always end with "consult your healthcare provider" for medical decisions
+            - If you see concerning patterns, mention consulting healthcare provider
+            - Focus on data interpretation and educational insights
             
-            Remember: You are an EDUCATIONAL TOOL, not a medical professional."""
+            Remember: You are an EDUCATIONAL TOOL that helps users understand their glucose data, not a medical professional."""
             
             # Build the full context
             full_context = system_prompt
@@ -176,12 +175,12 @@ Latest Readings:
                     {"role": "user", "content": message}
                 ],
                 max_tokens=800,
-                temperature=0.3  # Lower temperature for more consistent, safer responses
+                temperature=0.5  # Balanced temperature for helpful but safe responses
             )
             
             ai_response = response.choices[0].message.content
             
-            # Safety check: scan the AI response for dangerous content
+            # Safety check: only block the most dangerous content
             if self._check_for_dangerous_content(ai_response):
                 # Replace dangerous response with safe alternative
                 ai_response = """I apologize, but I cannot provide specific medical advice or recommendations about medications or insulin dosing. 
@@ -192,8 +191,8 @@ For any medical decisions, medication changes, or treatment plans, please consul
 
 What specific aspect of your glucose data would you like me to help you understand or analyze?"""
             
-            # Always add safety disclaimer
-            ai_response = self._add_safety_disclaimer(ai_response)
+            # Only add safety disclaimer occasionally, not every time
+            # This prevents repetitive warnings while maintaining safety awareness
             
             return {
                 "success": True,
