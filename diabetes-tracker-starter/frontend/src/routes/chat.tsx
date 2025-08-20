@@ -315,7 +315,7 @@ export default function Chat() {
               </div>
               <button
                 onClick={stopStreaming}
-                className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-md hover:bg-gray-200 transition-colors font-medium border border-gray-300 self-start"
+                className="px-2 py-1 bg-gray-50 text-gray-500 text-xs rounded-md hover:bg-gray-100 transition-colors border border-gray-200 hover:border-gray-300 self-start"
                 title="Stop AI response"
               >
                 Stop
@@ -352,22 +352,9 @@ export default function Chat() {
             {(isLoading || streamingMessageId) && (
               <button
                 onClick={stopStreaming}
-                className="flex-shrink-0 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium border border-gray-300"
+                className="flex-shrink-0 px-3 py-2 bg-gray-50 text-gray-500 text-xs rounded-md hover:bg-gray-100 transition-colors border border-gray-200 hover:border-gray-300"
                 title="Stop AI response"
               >
-                <svg
-                  className="w-4 h-4 inline mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
                 Stop
               </button>
             )}
