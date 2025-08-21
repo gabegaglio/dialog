@@ -308,26 +308,31 @@ export default function Dashboard() {
                 <div>
                   <div className="text-xs text-gray-600 mb-1">24h Avg</div>
                   <div className="text-2xl font-bold text-blue-600">
-                    {data24h && data24h.length > 0 ? 
-                      Math.round(
-                        data24h.reduce((sum, reading) => sum + reading.mgdl, 0) /
-                          data24h.length
-                      ) : '--'}
+                    {data24h && data24h.length > 0
+                      ? Math.round(
+                          data24h.reduce(
+                            (sum, reading) => sum + reading.mgdl,
+                            0
+                          ) / data24h.length
+                        )
+                      : "--"}
                   </div>
                 </div>
                 <div className="flex gap-3 text-xs">
                   <div>
                     <div className="text-gray-500">High</div>
                     <div className="font-semibold text-red-600">
-                      {data24h && data24h.length > 0 ? 
-                        Math.max(...data24h.map(r => r.mgdl)) : '--'}
+                      {data24h && data24h.length > 0
+                        ? Math.max(...data24h.map((r) => r.mgdl))
+                        : "--"}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-500">Low</div>
                     <div className="font-semibold text-blue-600">
-                      {data24h && data24h.length > 0 ? 
-                        Math.min(...data24h.map(r => r.mgdl)) : '--'}
+                      {data24h && data24h.length > 0
+                        ? Math.min(...data24h.map((r) => r.mgdl))
+                        : "--"}
                     </div>
                   </div>
                 </div>
@@ -388,9 +393,7 @@ export default function Dashboard() {
 
         {/* Chart Header - More Concealed */}
         <div className="text-center opacity-60">
-          <span className="text-sm text-gray-600">
-            Glucose Trend Chart
-          </span>
+          <span className="text-sm text-gray-600">Glucose Trend Chart</span>
         </div>
 
         {/* Bottom White Section - Graph with Time Selectors */}

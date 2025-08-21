@@ -79,11 +79,12 @@ export default function GlucoseLine({ data, showTargetRange = false }: { data: P
               />
 
               <YAxis
-                domain={[40, 300]}
+                domain={[40, 400]}
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 tick={{ fill: "#6b7280", fontSize: 12 }}
+                ticks={[55, 100, 200, 300, 400]}
               />
 
               <Tooltip
@@ -122,6 +123,16 @@ export default function GlucoseLine({ data, showTargetRange = false }: { data: P
                   strokeDasharray="3 3"
                 />
               )}
+
+              {/* Red dashed-dotted line at y = 55 (low glucose warning) */}
+              <ReferenceArea
+                y1={55}
+                y2={55}
+                stroke="#ef4444"
+                strokeOpacity={0.8}
+                strokeDasharray="5 5 2 5"
+                strokeWidth={2}
+              />
 
               <Line
                 type="natural"
