@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 
 interface Message {
@@ -45,6 +45,8 @@ export default function Dashboard() {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const streamIntervalRef = useRef<number | null>(null);
 
   // Prefetch all ranges for seamless transitions
   const { prefetchAll } = usePrefetchGlucoseData();
@@ -53,6 +55,15 @@ export default function Dashboard() {
     // Prefetch all ranges when component mounts
     prefetchAll();
   }, [prefetchAll]);
+
+  // Cleanup streaming on unmount
+  useEffect(() => {
+    return () => {
+      if (streamIntervalRef.current) {
+        clearInterval(streamIntervalRef.current);
+      }
+    };
+  }, []);
 
   if (isLoading && !data.length)
     return (
@@ -127,9 +138,64 @@ export default function Dashboard() {
     : null;
   const timeSinceLast = getTimeSinceLastReading();
 
+  // Function to stop streaming
+  const stopStreaming = () => {
+    if (streamIntervalRef.current) {
+      clearInterval(streamIntervalRef.current);
+      streamIntervalRef.current = null;
+    }
+
+    if (streamingMessageId) {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === streamingMessageId ? { ...msg, isStreaming: false } : msg
+        )
+      );
+      setStreamingMessageId(null);
+    }
+
+    setChatLoading(false);
+  };
+
+  // Function to simulate streaming effect
+  const streamMessage = (fullContent: string, messageId: string) => {
+    const words = fullContent.split(" ");
+    let currentIndex = 0;
+
+    setTimeout(() => {
+      const streamInterval = setInterval(() => {
+        if (currentIndex < words.length) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === messageId
+                ? {
+                    ...msg,
+                    content: words.slice(0, currentIndex + 1).join(" "),
+                    isStreaming: true,
+                  }
+                : msg
+            )
+          );
+          currentIndex++;
+        } else {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === messageId ? { ...msg, isStreaming: false } : msg
+            )
+          );
+          clearInterval(streamInterval);
+          setStreamingMessageId(null);
+          setChatLoading(false);
+        }
+      }, 30);
+
+      streamIntervalRef.current = streamInterval;
+    }, 300);
+  };
+
   // Chat functions
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || chatLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -142,17 +208,47 @@ export default function Dashboard() {
     setInputMessage("");
     setChatLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: Message = {
+    try {
+      const response = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          user_id: "default_user",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "",
+          role: "assistant",
+          timestamp: new Date(),
+          isStreaming: true,
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+        setStreamingMessageId(assistantMessage.id);
+
+        streamMessage(data.response, assistantMessage.id);
+      } else {
+        throw new Error(data.error || "Failed to get response");
+      }
+    } catch (error) {
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: "I'm here to help with your diabetes management questions! This is a demo response.",
+        content:
+          "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
         role: "assistant",
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
       setChatLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -325,9 +421,9 @@ export default function Dashboard() {
           
           {/* Messages */}
           <div className="flex-1 space-y-3 mb-4 max-h-[500px] overflow-y-auto">
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <div
-                key={message.id}
+                key={index}
                 className={`flex ${
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
@@ -341,7 +437,7 @@ export default function Dashboard() {
                 >
                   <p className="text-sm">{message.content}</p>
                   <p className="text-xs mt-1 opacity-70">
-                    {message.timestamp.toLocaleTimeString()}
+                    {new Date().toLocaleTimeString()}
                   </p>
                 </div>
               </div>
