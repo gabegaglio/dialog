@@ -27,8 +27,10 @@ interface Message {
 
 export default function Dashboard() {
   // State for selected time range
-  const [selectedRange, setSelectedRange] = useState<"3h" | "6h" | "12h" | "24h">("24h");
-  
+  const [selectedRange, setSelectedRange] = useState<
+    "3h" | "6h" | "12h" | "24h"
+  >("24h");
+
   const { data, isLoading, error, dataSource, isFetching } = useGlucoseData({
     range: selectedRange,
   });
@@ -45,7 +47,9 @@ export default function Dashboard() {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
-  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(
+    null
+  );
   const streamIntervalRef = useRef<number | null>(null);
 
   // Prefetch all ranges for seamless transitions
@@ -263,7 +267,9 @@ export default function Dashboard() {
                 <Activity className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Current Glucose</h2>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Current Glucose
+                </h2>
                 <p className="text-sm text-blue-600">Last reading</p>
               </div>
             </div>
@@ -320,7 +326,9 @@ export default function Dashboard() {
           {/* Target Range Card */}
           <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Target Range</h3>
+              <h3 className="text-sm font-medium text-gray-600">
+                Target Range
+              </h3>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
             <div className="text-xl font-bold text-gray-900">70-180</div>
@@ -334,9 +342,13 @@ export default function Dashboard() {
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
             </div>
             <div className="text-xl font-bold text-gray-900">
-              {currentGlucose && data && data.length > 1 ? 
-                (currentGlucose > data[data.length - 2]?.mgdl ? "↗ Rising" : 
-                 currentGlucose < data[data.length - 2]?.mgdl ? "↘ Falling" : "→ Stable") : "→ Stable"}
+              {currentGlucose && data && data.length > 1
+                ? currentGlucose > data[data.length - 2]?.mgdl
+                  ? "↗ Rising"
+                  : currentGlucose < data[data.length - 2]?.mgdl
+                  ? "↘ Falling"
+                  : "→ Stable"
+                : "→ Stable"}
             </div>
           </div>
 
@@ -355,58 +367,54 @@ export default function Dashboard() {
         {/* Chart Header */}
         <div className="text-center">
           <span className="text-lg font-semibold text-gray-800">
-            {selectedRange === "3h" ? "3-Hour" : 
-             selectedRange === "6h" ? "6-Hour" : 
-             selectedRange === "12h" ? "12-Hour" : "24-Hour"} Glucose Trend Chart
+            {selectedRange === "3h"
+              ? "3-Hour"
+              : selectedRange === "6h"
+              ? "6-Hour"
+              : selectedRange === "12h"
+              ? "12-Hour"
+              : "24-Hour"}{" "}
+            Glucose Trend Chart
           </span>
         </div>
 
         {/* Bottom White Section - Graph with Time Selectors */}
         <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-4">
           {/* Time Range Selectors */}
-          <div className="flex gap-2 mb-4">
-            <button 
-              onClick={() => setSelectedRange("3h")}
-              className={`px-4 py-2 rounded-md transition-colors font-medium ${
-                selectedRange === "3h" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-              }`}
-            >
-              3H
-            </button>
-            <button 
-              onClick={() => setSelectedRange("6h")}
-              className={`px-4 py-2 rounded-md transition-colors font-medium ${
-                selectedRange === "6h" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-              }`}
-            >
-              6H
-            </button>
-            <button 
-              onClick={() => setSelectedRange("12h")}
-              className={`px-4 py-2 rounded-md transition-colors font-medium ${
-                selectedRange === "12h" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-blue-200 text-blue-800 hover:bg-blue-300"
-              }`}
-            >
-              12H
-            </button>
-            <button 
-              onClick={() => setSelectedRange("24h")}
-              className={`px-4 py-2 rounded-md transition-colors font-medium ${
-                selectedRange === "24h" 
-                  ? "bg-blue-600 text-white" 
-                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-              }`}
-            >
-              24H
-            </button>
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Time Range:</span>
+              <div className="flex gap-1">
+                {[
+                  { value: "3h", label: "3 Hours", icon: Clock },
+                  { value: "6h", label: "6 Hours", icon: Clock },
+                  { value: "12h", label: "12 Hours", icon: Clock },
+                  { value: "24h", label: "24 Hours", icon: Clock },
+                ].map((range) => {
+                  const isSelected = selectedRange === range.value;
+                  const IconComponent = range.icon;
+
+                  return (
+                    <button
+                      key={range.value}
+                      onClick={() =>
+                        setSelectedRange(range.value as "3h" | "6h" | "12h" | "24h")
+                      }
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-all duration-200 ${
+                        isSelected
+                          ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                          : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 text-gray-600 hover:text-blue-600"
+                      }`}
+                    >
+                      <IconComponent className="w-3.5 h-3.5" />
+                      {range.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-          
+
           {/* Graph Area */}
           <div className="flex-1 min-h-[400px]">
             <GlucoseLine data={data ?? []} />
@@ -417,8 +425,10 @@ export default function Dashboard() {
       {/* Right Panel - Chat Box */}
       <div className="w-96 bg-gray-50 p-4 flex flex-col">
         <div className="flex-1 bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">AI Chat Assistant</h2>
-          
+          <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+            AI Chat Assistant
+          </h2>
+
           {/* Messages */}
           <div className="flex-1 space-y-3 mb-4 max-h-[500px] overflow-y-auto">
             {messages.map((message, index) => (
