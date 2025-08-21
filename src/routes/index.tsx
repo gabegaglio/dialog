@@ -156,54 +156,122 @@ export default function Dashboard() {
     <div className="flex h-screen bg-gray-50">
       {/* Left Panel - Dashboard */}
       <div className="flex-1 flex flex-col p-6 space-y-4">
-        {/* Top Black Section - GLUCOSE with NORMAL and 24HOUR AVG */}
-        <div className="bg-black text-white rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold">GLUCOSE</h1>
-              <div className="flex flex-col text-sm">
-                <span className="text-green-400">NORMAL</span>
-                <span className="text-blue-400">24HOUR AVG</span>
+        {/* Top Section - GLUCOSE with Status and 24HOUR AVG */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Activity className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Current Glucose</h2>
+                <p className="text-sm text-blue-600">Last reading</p>
               </div>
             </div>
-            <button className="text-blue-400 hover:text-blue-300">
-              <X className="w-5 h-5" />
-            </button>
+            {glucoseStatus && (
+              <div
+                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  glucoseStatus.status === "Normal"
+                    ? "bg-green-100 text-green-800 border border-green-200"
+                    : glucoseStatus.status === "Low"
+                    ? "bg-red-100 text-red-800 border border-red-200"
+                    : glucoseStatus.status === "High"
+                    ? "bg-red-100 text-red-800 border border-red-200"
+                    : "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                }`}
+              >
+                {glucoseStatus.status}
+              </div>
+            )}
           </div>
+
+          {currentGlucose ? (
+            <div className="flex items-end justify-between">
+              <div className="flex items-baseline gap-3">
+                <span className="text-5xl font-bold text-gray-900">
+                  {currentGlucose}
+                </span>
+                <span className="text-lg text-gray-600 font-medium">mg/dL</span>
+              </div>
+              {/* 24h Average */}
+              {data && data.length > 0 && (
+                <div className="text-right">
+                  <div className="text-xs text-gray-600 mb-1">24h Avg</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {Math.round(
+                      data.reduce((sum, reading) => sum + reading.mgdl, 0) /
+                        data.length
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-end justify-between">
+              <div className="flex items-baseline gap-3">
+                <span className="text-5xl font-bold text-gray-400">--</span>
+                <span className="text-lg text-gray-500 font-medium">mg/dL</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Middle Button Row - RANGE, TREND, UPDATED */}
-        <div className="flex gap-4">
-          <button className="flex-1 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-colors">
-            RANGE
-          </button>
-          <button className="flex-1 bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors">
-            TREND
-          </button>
-          <button className="flex-1 bg-cyan-400 text-black font-bold py-3 px-4 rounded-lg hover:bg-cyan-500 transition-colors">
-            UPDATED
-          </button>
+        <div className="grid grid-cols-3 gap-4">
+          {/* Target Range Card */}
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Target Range</h3>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
+            <div className="text-xl font-bold text-gray-900">70-180</div>
+            <div className="text-xs text-gray-500">mg/dL</div>
+          </div>
+
+          {/* Trend Card */}
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Trend</h3>
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            </div>
+            <div className="text-xl font-bold text-gray-900">
+              {currentGlucose && data && data.length > 1 ? 
+                (currentGlucose > data[data.length - 2]?.mgdl ? "↗ Rising" : 
+                 currentGlucose < data[data.length - 2]?.mgdl ? "↘ Falling" : "→ Stable") : "→ Stable"}
+            </div>
+          </div>
+
+          {/* Time Card */}
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Updated</h3>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            </div>
+            <div className="text-xl font-bold text-gray-900">
+              {timeSinceLast || "--"}
+            </div>
+          </div>
         </div>
 
-        {/* RANGE SELECTOR Text */}
+        {/* Chart Header */}
         <div className="text-center">
-          <span className="text-lg font-semibold text-gray-800">RANGE SELECTOR</span>
+          <span className="text-lg font-semibold text-gray-800">Glucose Trend Chart</span>
         </div>
 
         {/* Bottom White Section - Graph with Time Selectors */}
         <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-4">
           {/* Time Range Selectors */}
           <div className="flex gap-2 mb-4">
-            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors">
+            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
               3H
             </button>
-            <button className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors">
+            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
               6H
             </button>
-            <button className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors">
+            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
               12H
             </button>
-            <button className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors">
+            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
               24H
             </button>
           </div>
@@ -216,9 +284,9 @@ export default function Dashboard() {
       </div>
 
       {/* Right Panel - Chat Box */}
-      <div className="w-96 bg-green-400 p-4 flex flex-col">
-        <div className="flex-1 bg-white rounded-lg p-4 mb-4">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">CHAT BOX</h2>
+      <div className="w-96 bg-gray-50 p-4 flex flex-col">
+        <div className="flex-1 bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">AI Chat Assistant</h2>
           
           {/* Messages */}
           <div className="flex-1 space-y-3 mb-4 max-h-[500px] overflow-y-auto">
