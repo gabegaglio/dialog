@@ -22,7 +22,7 @@ export default function GlucoseLine({
 }) {
   // Transform data for the chart
   const chartData = data.map((point) => ({
-    time: format(new Date(point.ts), "HH:mm"),
+    time: format(new Date(point.ts), "hh:mm a"),
     glucose: point.mgdl,
     fullTime: format(new Date(point.ts), "PPpp"),
     trend: point.trend || "stable",
