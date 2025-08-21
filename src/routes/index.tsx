@@ -12,13 +12,36 @@ import {
   Target,
   Clock,
   AlertTriangle,
+  X,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Send, Bot, User, Loader2 } from "lucide-react";
+
+interface Message {
+  id: string;
+  content: string;
+  role: "user" | "assistant";
+  timestamp: Date;
+  isStreaming?: boolean;
+}
 
 export default function Dashboard() {
   const { data, isLoading, error, dataSource, isFetching } = useGlucoseData({
     range: "24h",
   });
+
+  // Chat state
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      content:
+        "Hello! I'm your AI diabetes management assistant. I can help you understand your glucose data, provide lifestyle advice, and answer questions about diabetes care. How can I help you today?",
+      role: "assistant",
+      timestamp: new Date(),
+    },
+  ]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
 
   // Prefetch all ranges for seamless transitions
   const { prefetchAll } = usePrefetchGlucoseData();
@@ -45,23 +68,6 @@ export default function Dashboard() {
 
   const currentGlucose =
     data && data.length > 0 ? data[data.length - 1]?.mgdl : null;
-  const previousGlucose =
-    data && data.length > 1 ? data[data.length - 2]?.mgdl : null;
-
-  // Calculate trend
-  const getTrendInfo = () => {
-    if (!currentGlucose || !previousGlucose)
-      return { direction: "stable", percentage: 0, color: "text-gray-600" };
-
-    const change = currentGlucose - previousGlucose;
-    const percentage = Math.abs((change / previousGlucose) * 100).toFixed(1);
-
-    if (change > 0)
-      return { direction: "up", percentage, color: "text-red-600" };
-    if (change < 0)
-      return { direction: "down", percentage, color: "text-green-600" };
-    return { direction: "stable", percentage: 0, color: "text-gray-600" };
-  };
 
   // Calculate glucose status and zone
   const getGlucoseStatus = (glucose: number) => {
@@ -113,299 +119,156 @@ export default function Dashboard() {
     return `${diffHours}h ${diffMinutes % 60}m ago`;
   };
 
-  const trendInfo = getTrendInfo();
   const glucoseStatus = currentGlucose
     ? getGlucoseStatus(currentGlucose)
     : null;
   const timeSinceLast = getTimeSinceLastReading();
-  const StatusIcon = glucoseStatus?.icon || Target;
+
+  // Chat functions
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: inputMessage,
+      role: "user",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
+    setChatLoading(true);
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm here to help with your diabetes management questions! This is a demo response.",
+        role: "assistant",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      setChatLoading(false);
+    }, 1000);
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Dashboard
-          </h1>
-          <p className="text-gray-600 mt-1 font-medium">
-            Monitor your glucose levels and trends
-          </p>
+    <div className="flex h-screen bg-gray-50">
+      {/* Left Panel - Dashboard */}
+      <div className="flex-1 flex flex-col p-6 space-y-4">
+        {/* Top Black Section - GLUCOSE with NORMAL and 24HOUR AVG */}
+        <div className="bg-black text-white rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold">GLUCOSE</h1>
+              <div className="flex flex-col text-sm">
+                <span className="text-green-400">NORMAL</span>
+                <span className="text-blue-400">24HOUR AVG</span>
+              </div>
+            </div>
+            <button className="text-blue-400 hover:text-blue-300">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div
-            className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 ${
-              dataSource === "dexcom"
-                ? "bg-green-100 text-green-800 border border-green-200"
-                : dataSource === "real_csv"
-                ? "bg-blue-100 text-blue-800 border border-blue-200"
-                : "bg-amber-100 text-amber-800 border border-amber-200"
-            }`}
-          >
-            <Database className="w-4 h-4" />
-            {dataSource === "dexcom"
-              ? "Live Dexcom"
-              : dataSource === "real_csv"
-              ? "Real Data"
-              : "Synthetic Data"}
+        {/* Middle Button Row - RANGE, TREND, UPDATED */}
+        <div className="flex gap-4">
+          <button className="flex-1 bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-colors">
+            RANGE
+          </button>
+          <button className="flex-1 bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition-colors">
+            TREND
+          </button>
+          <button className="flex-1 bg-cyan-400 text-black font-bold py-3 px-4 rounded-lg hover:bg-cyan-500 transition-colors">
+            UPDATED
+          </button>
+        </div>
+
+        {/* RANGE SELECTOR Text */}
+        <div className="text-center">
+          <span className="text-lg font-semibold text-gray-800">RANGE SELECTOR</span>
+        </div>
+
+        {/* Bottom White Section - Graph with Time Selectors */}
+        <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+          {/* Time Range Selectors */}
+          <div className="flex gap-2 mb-4">
+            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors">
+              3H
+            </button>
+            <button className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors">
+              6H
+            </button>
+            <button className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors">
+              12H
+            </button>
+            <button className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 transition-colors">
+              24H
+            </button>
+          </div>
+          
+          {/* Graph Area */}
+          <div className="flex-1 min-h-[400px]">
+            <GlucoseLine data={data ?? []} />
           </div>
         </div>
       </div>
 
-      {/* Current Glucose Level - Light & Concise Design */}
-      <div className="space-y-4">
-        {/* Main glucose card */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Current Glucose
-                </h2>
-                <p className="text-sm text-blue-600">Last reading</p>
-              </div>
-            </div>
-
-            {/* Status badge */}
-            {glucoseStatus && (
+      {/* Right Panel - Chat Box */}
+      <div className="w-96 bg-green-400 p-4 flex flex-col">
+        <div className="flex-1 bg-white rounded-lg p-4 mb-4">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">CHAT BOX</h2>
+          
+          {/* Messages */}
+          <div className="flex-1 space-y-3 mb-4 max-h-[500px] overflow-y-auto">
+            {messages.map((message) => (
               <div
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  glucoseStatus.status === "Normal"
-                    ? "bg-green-100 text-green-800 border border-green-200"
-                    : glucoseStatus.status === "Low"
-                    ? "bg-red-100 text-red-800 border border-red-200"
-                    : glucoseStatus.status === "High"
-                    ? "bg-red-100 text-red-800 border border-red-200"
-                    : "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                key={message.id}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                {glucoseStatus.status}
+                <div
+                  className={`max-w-xs px-3 py-2 rounded-lg ${
+                    message.role === "user"
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                  <p className="text-xs mt-1 opacity-70">
+                    {message.timestamp.toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {chatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
               </div>
             )}
           </div>
 
-          {currentGlucose ? (
-            <div className="flex items-end justify-between">
-              <div className="flex items-baseline gap-3">
-                <span className="text-5xl font-bold text-gray-900">
-                  {currentGlucose}
-                </span>
-                <span className="text-lg text-gray-600 font-medium">mg/dL</span>
-              </div>
-
-              {/* 24h Average */}
-              {data && data.length > 0 && (
-                <div className="text-right">
-                  <div className="text-xs text-gray-600 mb-1">24h Avg</div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {Math.round(
-                      data.reduce((sum, reading) => sum + reading.mgdl, 0) /
-                        data.length
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-end justify-between">
-              <div className="flex items-baseline gap-3">
-                <span className="text-5xl font-bold text-gray-400">--</span>
-                <span className="text-lg text-gray-500 font-medium">mg/dL</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Secondary info cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Target Range Card */}
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">
-                Target Range
-              </h3>
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            </div>
-            <div className="text-xl font-bold text-gray-900">70-180</div>
-            <div className="text-xs text-gray-500">mg/dL</div>
-          </div>
-
-          {/* Trend Card */}
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Trend</h3>
-              <div
-                className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  trendInfo.direction === "up"
-                    ? "bg-red-100 text-red-800"
-                    : trendInfo.direction === "down"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {trendInfo.direction === "up"
-                  ? "↗"
-                  : trendInfo.direction === "down"
-                  ? "↘"
-                  : "→"}
-                {trendInfo.direction !== "stable" &&
-                  ` ${trendInfo.percentage}%`}
-              </div>
-            </div>
-            <div className="text-xl font-bold text-gray-900">
-              {trendInfo.direction === "up"
-                ? "Rising"
-                : trendInfo.direction === "down"
-                ? "Falling"
-                : "Stable"}
-            </div>
-          </div>
-
-          {/* Time Card */}
-          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-gray-600">Updated</h3>
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            </div>
-            <div className="text-xl font-bold text-gray-900">
-              {timeSinceLast || "--"}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Data Source Alert */}
-      {dataSource === "synthetic" && (
-        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-6">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-amber-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-amber-800 font-medium">Using Demo Data</h3>
-              <p className="text-amber-700 text-sm mt-1">
-                You're currently viewing synthetic data for demonstration
-                purposes.{" "}
-                <a
-                  href="/settings"
-                  className="text-blue-600 hover:text-blue-700 font-medium underline"
-                >
-                  Connect to Dexcom
-                </a>{" "}
-                to see your real glucose readings.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Chart Section */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
-            24-Hour Glucose Trend
-          </h2>
-        </div>
-        <div className="p-6">
-          <GlucoseLine data={data ?? []} />
-        </div>
-      </div>
-
-      {/* Enhanced Quick Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Data Points</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {data ? data.length : 0}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <Database className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Status</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {dataSource === "dexcom"
-                  ? "Live"
-                  : dataSource === "real_csv"
-                  ? "Real"
-                  : "Demo"}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Range</p>
-              <p className="text-2xl font-bold text-gray-900">24h</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Zone</p>
-              <p
-                className={`text-2xl font-bold ${
-                  glucoseStatus?.color || "text-gray-900"
-                }`}
-              >
-                {glucoseStatus?.status || "--"}
-              </p>
-            </div>
-            <div
-              className={`w-12 h-12 ${
-                glucoseStatus?.bgColor || "bg-gray-100"
-              } rounded-lg flex items-center justify-center`}
+          {/* Input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              placeholder="Type your message..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={chatLoading}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
             >
-              <StatusIcon
-                className={`w-6 h-6 ${glucoseStatus?.color || "text-gray-600"}`}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Medical Disclaimer - Moved to bottom */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0">
-            <div className="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-            </div>
-          </div>
-          <div>
-            <h3 className="text-amber-800 font-medium text-sm">
-              Medical Disclaimer
-            </h3>
-            <p className="text-amber-700 text-sm mt-1">
-              This dashboard is for informational purposes only. Never make
-              medical decisions based solely on this data. Always consult your
-              healthcare provider for medical advice, medication changes, or
-              treatment plans.
-            </p>
+              <Send className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
