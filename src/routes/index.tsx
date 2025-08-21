@@ -35,6 +35,11 @@ export default function Dashboard() {
     range: selectedRange,
   });
 
+  // Always fetch 24h data for stats display
+  const { data: data24h } = useGlucoseData({
+    range: "24h",
+  });
+
   // Chat state
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -298,18 +303,35 @@ export default function Dashboard() {
                 </span>
                 <span className="text-lg text-gray-600 font-medium">mg/dL</span>
               </div>
-              {/* 24h Average */}
-              {data && data.length > 0 && (
-                <div className="text-right">
+              {/* 24h Stats - Always calculated from 24h data */}
+              <div className="text-right space-y-2">
+                <div>
                   <div className="text-xs text-gray-600 mb-1">24h Avg</div>
                   <div className="text-2xl font-bold text-blue-600">
-                    {Math.round(
-                      data.reduce((sum, reading) => sum + reading.mgdl, 0) /
-                        data.length
-                    )}
+                    {data24h && data24h.length > 0 ? 
+                      Math.round(
+                        data24h.reduce((sum, reading) => sum + reading.mgdl, 0) /
+                          data24h.length
+                      ) : '--'}
                   </div>
                 </div>
-              )}
+                <div className="flex gap-3 text-xs">
+                  <div>
+                    <div className="text-gray-500">High</div>
+                    <div className="font-semibold text-red-600">
+                      {data24h && data24h.length > 0 ? 
+                        Math.max(...data24h.map(r => r.mgdl)) : '--'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Low</div>
+                    <div className="font-semibold text-blue-600">
+                      {data24h && data24h.length > 0 ? 
+                        Math.min(...data24h.map(r => r.mgdl)) : '--'}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex items-end justify-between">
@@ -364,16 +386,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Chart Header */}
-        <div className="text-center">
-          <span className="text-lg font-semibold text-gray-800">
-            {selectedRange === "3h"
-              ? "3-Hour"
-              : selectedRange === "6h"
-              ? "6-Hour"
-              : selectedRange === "12h"
-              ? "12-Hour"
-              : "24-Hour"}{" "}
+        {/* Chart Header - More Concealed */}
+        <div className="text-center opacity-60">
+          <span className="text-sm text-gray-600">
             Glucose Trend Chart
           </span>
         </div>
@@ -383,7 +398,9 @@ export default function Dashboard() {
           {/* Time Range Selectors */}
           <div className="flex items-center gap-4 mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Time Range:</span>
+              <span className="text-sm font-medium text-gray-700">
+                Time Range:
+              </span>
               <div className="flex gap-1">
                 {[
                   { value: "3h", label: "3 Hours", icon: Clock },
@@ -398,7 +415,9 @@ export default function Dashboard() {
                     <button
                       key={range.value}
                       onClick={() =>
-                        setSelectedRange(range.value as "3h" | "6h" | "12h" | "24h")
+                        setSelectedRange(
+                          range.value as "3h" | "6h" | "12h" | "24h"
+                        )
                       }
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-all duration-200 ${
                         isSelected
@@ -417,7 +436,7 @@ export default function Dashboard() {
 
           {/* Graph Area */}
           <div className="flex-1 min-h-[400px]">
-            <GlucoseLine data={data ?? []} />
+            <GlucoseLine data={data ?? []} showTargetRange={true} />
           </div>
         </div>
       </div>

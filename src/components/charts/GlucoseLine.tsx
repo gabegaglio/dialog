@@ -6,13 +6,14 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceArea,
 } from "recharts";
 import { format } from "date-fns";
 import { TrendingUp, Activity } from "lucide-react";
 
 type Point = { ts: string; mgdl: number; trend?: string; trendRate?: number };
 
-export default function GlucoseLine({ data }: { data: Point[] }) {
+export default function GlucoseLine({ data, showTargetRange = false }: { data: Point[]; showTargetRange?: boolean }) {
   // Transform data for the chart
   const chartData = data.map((point) => ({
     time: format(new Date(point.ts), "HH:mm"),
@@ -108,6 +109,19 @@ export default function GlucoseLine({ data }: { data: Point[] }) {
                   return null;
                 }}
               />
+
+              {/* Target Range Reference Area (70-180 mg/dL) */}
+              {showTargetRange && (
+                <ReferenceArea
+                  y1={70}
+                  y2={180}
+                  fill="#10b981"
+                  fillOpacity={0.1}
+                  stroke="#10b981"
+                  strokeOpacity={0.3}
+                  strokeDasharray="3 3"
+                />
+              )}
 
               <Line
                 type="natural"
