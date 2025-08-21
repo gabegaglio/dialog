@@ -26,8 +26,11 @@ interface Message {
 }
 
 export default function Dashboard() {
+  // State for selected time range
+  const [selectedRange, setSelectedRange] = useState<"3h" | "6h" | "12h" | "24h">("24h");
+  
   const { data, isLoading, error, dataSource, isFetching } = useGlucoseData({
-    range: "24h",
+    range: selectedRange,
   });
 
   // Chat state
@@ -255,23 +258,55 @@ export default function Dashboard() {
 
         {/* Chart Header */}
         <div className="text-center">
-          <span className="text-lg font-semibold text-gray-800">Glucose Trend Chart</span>
+          <span className="text-lg font-semibold text-gray-800">
+            {selectedRange === "3h" ? "3-Hour" : 
+             selectedRange === "6h" ? "6-Hour" : 
+             selectedRange === "12h" ? "12-Hour" : "24-Hour"} Glucose Trend Chart
+          </span>
         </div>
 
         {/* Bottom White Section - Graph with Time Selectors */}
         <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-4">
           {/* Time Range Selectors */}
           <div className="flex gap-2 mb-4">
-            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
+            <button 
+              onClick={() => setSelectedRange("3h")}
+              className={`px-4 py-2 rounded-md transition-colors font-medium ${
+                selectedRange === "3h" 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+              }`}
+            >
               3H
             </button>
-            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
+            <button 
+              onClick={() => setSelectedRange("6h")}
+              className={`px-4 py-2 rounded-md transition-colors font-medium ${
+                selectedRange === "6h" 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+              }`}
+            >
               6H
             </button>
-            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
+            <button 
+              onClick={() => setSelectedRange("12h")}
+              className={`px-4 py-2 rounded-md transition-colors font-medium ${
+                selectedRange === "12h" 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-blue-200 text-blue-800 hover:bg-blue-300"
+              }`}
+            >
               12H
             </button>
-            <button className="px-4 py-2 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors font-medium">
+            <button 
+              onClick={() => setSelectedRange("24h")}
+              className={`px-4 py-2 rounded-md transition-colors font-medium ${
+                selectedRange === "24h" 
+                  ? "bg-blue-600 text-white" 
+                  : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+              }`}
+            >
               24H
             </button>
           </div>
