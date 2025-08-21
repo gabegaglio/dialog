@@ -99,11 +99,9 @@ export default function GlucoseLine({ data, showTargetRange = false }: { data: P
                         <p className="text-blue-600 font-semibold">
                           {data.glucose} mg/dL
                         </p>
-                        {data.trend && (
-                          <p className="text-gray-600 text-sm">
-                            Trend: {data.trend}
-                          </p>
-                        )}
+                        <p className="text-gray-600 text-sm">
+                          Status: {data.glucose < 70 ? "Low" : data.glucose > 180 ? "High" : "In Range"}
+                        </p>
                       </div>
                     );
                   }
@@ -128,6 +126,7 @@ export default function GlucoseLine({ data, showTargetRange = false }: { data: P
               <ReferenceArea
                 y1={55}
                 y2={55}
+                fill="none"
                 stroke="#ef4444"
                 strokeOpacity={0.8}
                 strokeDasharray="5 5 2 5"
