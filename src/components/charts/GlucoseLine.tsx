@@ -13,7 +13,13 @@ import { TrendingUp, Activity } from "lucide-react";
 
 type Point = { ts: string; mgdl: number; trend?: string; trendRate?: number };
 
-export default function GlucoseLine({ data, showTargetRange = false }: { data: Point[]; showTargetRange?: boolean }) {
+export default function GlucoseLine({
+  data,
+  showTargetRange = false,
+}: {
+  data: Point[];
+  showTargetRange?: boolean;
+}) {
   // Transform data for the chart
   const chartData = data.map((point) => ({
     time: format(new Date(point.ts), "HH:mm"),
@@ -100,7 +106,12 @@ export default function GlucoseLine({ data, showTargetRange = false }: { data: P
                           {data.glucose} mg/dL
                         </p>
                         <p className="text-gray-600 text-sm">
-                          Status: {data.glucose < 70 ? "Low" : data.glucose > 180 ? "High" : "In Range"}
+                          Status:{" "}
+                          {data.glucose < 70
+                            ? "Low"
+                            : data.glucose > 180
+                            ? "High"
+                            : "In Range"}
                         </p>
                       </div>
                     );

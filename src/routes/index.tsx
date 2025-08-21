@@ -29,7 +29,7 @@ export default function Dashboard() {
   // State for selected time range
   const [selectedRange, setSelectedRange] = useState<
     "3h" | "6h" | "12h" | "24h"
-  >("24h");
+  >("12h");
 
   const { data, isLoading, error, dataSource, isFetching } = useGlucoseData({
     range: selectedRange,
