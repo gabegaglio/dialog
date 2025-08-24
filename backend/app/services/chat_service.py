@@ -1,8 +1,8 @@
 import openai
 import os
 import re
+import httpx
 from typing import Dict, Any, List
-from app.services.real_data_service import real_data_service
 from datetime import datetime, timedelta
 
 class ChatService:
@@ -51,11 +51,41 @@ class ChatService:
         
         return any(phrase in text_lower for phrase in dangerous_phrases)
     
+    def _clean_markdown_formatting(self, text: str) -> str:
+        """Clean up markdown formatting for professional appearance"""
+        # Remove bold formatting (**text** -> text)
+        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+        
+        # Remove italic formatting (*text* -> text)
+        text = re.sub(r'\*(.*?)\*', r'\1', text)
+        
+        # Remove header formatting (# ## ### -> clean text) - more thorough
+        text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+        text = re.sub(r'\n\s*#{1,6}\s+', '\n', text, flags=re.MULTILINE)
+        
+        # Remove code formatting (`text` -> text)
+        text = re.sub(r'`(.*?)`', r'\1', text)
+        
+        # Remove link formatting ([text](url) -> text)
+        text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+        
+        # Clean up extra whitespace and ensure proper formatting
+        text = re.sub(r'\n\s*\n\s*\n', '\n\n', text)
+        text = re.sub(r'\n\s*-\s*', '\n- ', text)
+        
+        # Ensure proper spacing after header removal
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        
+        # Clean up any remaining markdown artifacts
+        text = re.sub(r'^\s*#{1,6}\s*$', '', text, flags=re.MULTILINE)
+        
+        return text.strip()
+
     def _add_safety_disclaimer(self, response: str) -> str:
         """Add safety disclaimers to AI responses"""
         safety_disclaimer = """
 
-⚠️ **IMPORTANT SAFETY REMINDER:**
+IMPORTANT SAFETY REMINDER:
 - This information is for educational purposes only
 - Never adjust medications or insulin doses without consulting your healthcare provider
 - Always seek professional medical advice for treatment decisions
@@ -64,46 +94,68 @@ class ChatService:
         
         return response + safety_disclaimer
     
-    def _get_glucose_context(self, hours: int = 24) -> str:
+    async def _get_glucose_context(self, hours: int = 24, user_id: str = "default_user") -> str:
         """Get recent glucose data context for the AI"""
         try:
-            glucose_data = real_data_service.get_glucose_data(hours=hours)
-            if not glucose_data:
-                return "No recent glucose data available."
+            # Convert hours to range string
+            range_str = f"{hours}h"
             
-            # Calculate key metrics
-            glucose_values = [point['mgdl'] for point in glucose_data]
-            avg_glucose = sum(glucose_values) / len(glucose_values)
-            min_glucose = min(glucose_values)
-            max_glucose = max(glucose_values)
-            
-            # Get time range
-            start_time = glucose_data[0]['ts']
-            end_time = glucose_data[-1]['ts']
-            
-            # Count readings in different ranges
-            low_count = len([g for g in glucose_values if g < 70])
-            normal_count = len([g for g in glucose_values if 70 <= g <= 180])
-            high_count = len([g for g in glucose_values if g > 180])
-            
-            context = f"""
+            # Call the glucose endpoint to get data the same way frontend does
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"http://localhost:8000/glucose",
+                    params={"range": range_str, "user_id": user_id}
+                )
+                
+                if response.status_code != 200:
+                    return f"Error fetching glucose data: HTTP {response.status_code}"
+                
+                glucose_response = response.json()
+                glucose_data = glucose_response.get('data', [])
+                source = glucose_response.get('source', 'unknown')
+                
+                if not glucose_data:
+                    return "No recent glucose data available."
+                
+                # Calculate key metrics
+                glucose_values = [point['mgdl'] for point in glucose_data]
+                avg_glucose = sum(glucose_values) / len(glucose_values)
+                min_glucose = min(glucose_values)
+                max_glucose = max(glucose_values)
+                
+                # Get time range
+                start_time = glucose_data[0]['ts']
+                end_time = glucose_data[-1]['ts']
+                
+                # Count readings in different ranges
+                low_count = len([g for g in glucose_values if g < 70])
+                normal_count = len([g for g in glucose_values if 70 <= g <= 180])
+                high_count = len([g for g in glucose_values if g > 180])
+                
+                # Format times nicely
+                start_formatted = datetime.fromisoformat(start_time.replace('Z', '+00:00')).strftime('%m/%d %H:%M')
+                end_formatted = datetime.fromisoformat(end_time.replace('Z', '+00:00')).strftime('%m/%d %H:%M')
+                
+                context = f"""
 Recent Glucose Data (Last {hours} hours):
-- Time Range: {start_time} to {end_time}
+- Data Source: {source}
+- Time Range: {start_formatted} to {end_formatted}
 - Total Readings: {len(glucose_data)}
 - Average: {avg_glucose:.1f} mg/dL
 - Range: {min_glucose} - {max_glucose} mg/dL
-- Low (<70): {low_count} readings
-- Normal (70-180): {normal_count} readings  
-- High (>180): {high_count} readings
+- Low readings (<70 mg/dL): {low_count}
+- Normal readings (70-180 mg/dL): {normal_count}
+- High readings (>180 mg/dL): {high_count}
 
 Latest Readings:
 """
-            # Add last 5 readings for context
-            for i, point in enumerate(glucose_data[-5:]):
-                context += f"- {point['ts']}: {point['mgdl']} mg/dL\n"
-            
-            return context
-            
+                # Add last 5 readings for context
+                for point in glucose_data[-5:]:
+                    time_formatted = datetime.fromisoformat(point['ts'].replace('Z', '+00:00')).strftime('%H:%M')
+                    context += f"- {time_formatted}: {point['mgdl']} mg/dL\n"
+                
+                return context
+                
         except Exception as e:
             return f"Error loading glucose data: {str(e)}"
     
@@ -130,7 +182,7 @@ Latest Readings:
             
             if include_glucose:
                 # Get 24 hours of glucose data for context
-                glucose_context = self._get_glucose_context(hours=24)
+                glucose_context = await self._get_glucose_context(hours=24, user_id=user_id)
             
             # Create a comprehensive system prompt with balanced safety measures
             system_prompt = """You are a helpful AI assistant specialized in diabetes management and glucose monitoring. 
@@ -151,6 +203,17 @@ Latest Readings:
             - Identify concerning patterns and recommend when to seek medical attention
             - Provide general diabetes education and awareness
             - Give detailed trend analysis and data interpretation
+            
+            ✅ RESPONSE FORMATTING REQUIREMENTS:
+            - Use clean, professional formatting without markdown symbols (no **, ##, ###, or other markdown)
+            - NEVER use headers (# ## ###) - use clear section titles in plain text instead
+            - Write in clear, organized paragraphs with proper punctuation
+            - Use bullet points with simple dashes (-) for lists when helpful
+            - Present glucose readings in a clean, readable format
+            - Use proper spacing and paragraph breaks for easy reading
+            - Write in a professional, medical-adjacent tone
+            - Ensure all responses are punctual, organized, and easy to read
+            - Structure responses with clear section breaks using blank lines, not headers
             
             ✅ RESPONSE APPROACH:
             - Be helpful, informative, and educational
@@ -179,6 +242,9 @@ Latest Readings:
             )
             
             ai_response = response.choices[0].message.content
+            
+            # Clean up markdown formatting for professional appearance
+            ai_response = self._clean_markdown_formatting(ai_response)
             
             # Safety check: only block the most dangerous content
             if self._check_for_dangerous_content(ai_response):

@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
   ReferenceArea,
+  ReferenceLine,
 } from "recharts";
 import { format } from "date-fns";
 import { TrendingUp, Activity } from "lucide-react";
@@ -16,9 +17,11 @@ type Point = { ts: string; mgdl: number; trend?: string; trendRate?: number };
 export default function GlucoseLine({
   data,
   showTargetRange = false,
+  timeRange,
 }: {
   data: Point[];
   showTargetRange?: boolean;
+  timeRange?: "3h" | "6h" | "12h" | "24h";
 }) {
   // Transform data for the chart
   const chartData = data.map((point) => ({
@@ -41,24 +44,8 @@ export default function GlucoseLine({
   const isTrendingUp = parseFloat(trendPercentage) > 0;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-            <Activity className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Glucose Trend
-            </h3>
-            <p className="text-gray-600 text-sm">
-              Real-time glucose monitoring data
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6">
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="">
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
@@ -85,7 +72,7 @@ export default function GlucoseLine({
               />
 
               <YAxis
-                domain={[40, 400]}
+                domain={[30, 400]}
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
@@ -98,7 +85,7 @@ export default function GlucoseLine({
                   if (active && payload && payload.length) {
                     const data = payload[0].payload;
                     return (
-                      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                      <div className="bg-white p-3 border border-gray-200 rounded-2xl shadow-lg">
                         <p className="font-medium text-gray-900">
                           {data.fullTime}
                         </p>
@@ -134,14 +121,12 @@ export default function GlucoseLine({
               )}
 
               {/* Red dashed-dotted line at y = 55 (low glucose warning) */}
-              <ReferenceArea
-                y1={55}
-                y2={55}
-                fill="none"
+              <ReferenceLine
+                y={55}
                 stroke="#ef4444"
-                strokeOpacity={0.8}
+                strokeOpacity={1}
                 strokeDasharray="5 5 2 5"
-                strokeWidth={2}
+                strokeWidth={3}
               />
 
               <Line
@@ -156,7 +141,7 @@ export default function GlucoseLine({
         </div>
       </div>
 
-      <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+      <div className="px-6 py-4 border-t">
         <div className="flex w-full items-start gap-2 text-sm">
           <div className="grid gap-2">
             <div className="flex items-center gap-2 leading-none font-medium text-gray-900">

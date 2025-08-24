@@ -1,20 +1,25 @@
 import os
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic_settings import BaseSettings
 from datetime import datetime, timedelta
 from typing import Optional
 
 class Settings(BaseSettings):
-    MONGO_URI: str = "mongodb://localhost:27017"
-    DB_NAME: str = "diabetes_mvp"
+    MONGO_URI: str = ""
+    DB_NAME: str = ""
 
     DEXCOM_CLIENT_ID: str = ""
     DEXCOM_CLIENT_SECRET: str = ""
     DEXCOM_REDIRECT_URI: str = ""
 
     OPENAI_API_KEY: str = ""
+    
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
 
-settings = Settings(_env_file=os.getenv('ENV_FILE', '.env'))
+settings = Settings(_env_file=os.getenv('ENV_FILE', '../.env'))
 
 # Initialize MongoDB client with error handling
 mongo_available = False
@@ -32,7 +37,13 @@ def init_mongodb():
     global mongo_available, client, db, users_collection, tokens_collection, glucose_collection
     
     try:
-        client = AsyncIOMotorClient(settings.MONGO_URI, serverSelectionTimeoutMS=5000)
+        client = AsyncIOMotorClient(
+            settings.MONGO_URI, 
+            serverSelectionTimeoutMS=5000,
+            tls=True,
+            tlsCAFile=certifi.where(),
+            tlsAllowInvalidCertificates=True
+        )
         db = client[settings.DB_NAME]
         # Test connection with short timeout
         client.admin.command('ping')
@@ -110,6 +121,7 @@ async def get_valid_access_token(user_id: str) -> Optional[str]:
         return token_doc["access_token"]
     
     # Token expired, need to refresh
+    print(f"🔄 Access token expired for user {user_id}, attempting refresh...")
     return None  # Will be handled by the service layer
 
 async def delete_user_tokens(user_id: str) -> bool:

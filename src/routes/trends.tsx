@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   useGlucoseData,
   usePrefetchGlucoseData,
@@ -26,10 +26,15 @@ export default function Trends() {
   // Prefetch all ranges for seamless transitions
   const { prefetchAll } = usePrefetchGlucoseData();
 
-  useEffect(() => {
-    // Prefetch all ranges when component mounts
+  // Use useCallback to prevent infinite re-renders
+  const handlePrefetch = useCallback(() => {
     prefetchAll();
   }, [prefetchAll]);
+
+  useEffect(() => {
+    // Prefetch all ranges when component mounts (only once)
+    handlePrefetch();
+  }, [handlePrefetch]);
 
   const timeRanges = [
     { value: "3h", label: "3 Hours", icon: Clock },
