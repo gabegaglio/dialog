@@ -1,11 +1,5 @@
 # Diabetes Tracker — Starter Repo
 
-## Structure
-```
-.
-├─ frontend<img width="1470" height="828" alt="Screenshot 2025-10-21 at 2 17 49 PM" src="https://github.com/user-attachments/assets/c45c7de2-d8e2-427b-9b97-7c89ec3fe591" />
-/   # Vite + React + TypeScript + Tailwind + React Query
-└─ backend/    # FastAPI + MongoDB (motor) + httpx
 ```
 ├─ frontend
 <img width="1470" height="828" alt="Screenshot 2025-10-21 at 2 17 49 PM" src="https://github.com/user-attachments/assets/c45c7de2-d8e2-427b-9b97-7c89ec3fe591" />
