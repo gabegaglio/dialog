@@ -1,6 +1,4 @@
-# Diabetes Tracker — Starter Repo
-
-├─ frontend
+# Dia-Log - Diabetes Glucose Tracker Repo
 
 <img width="1470" height="828" alt="Screenshot 2025-10-21 at 2 17 49 PM" src="https://github.com/user-attachments/assets/c45c7de2-d8e2-427b-9b97-7c89ec3fe591" />
 <img width="1470" height="728" alt="Screenshot 2025-10-21 at 2 18 15 PM" src="https://github.com/user-attachments/assets/ac61603a-44fa-49a1-b9f5-4e96fc632e10" />
